@@ -1,6 +1,6 @@
 # Старт
 
-Для старта вам нужно иметь установленный Go и sqlite. Перейдите в корневую папку проекта и выполните команду `make run`, чтобы запустить проект. После этого он будет доступен по адресу `localhost:44044`.
+Для старта вам нужно иметь установленный Go и sqlite. Перейдите в корневую папку проекта и выполните команду `make run`, чтобы запустить проект.
 
 # Установка и запуск
 
@@ -40,47 +40,85 @@
 
 # API
 
-Проект предоставляет следующие эндпоинты и методы:
+## gRPC Server Information
 
-- **/order**
-    - **POST**: Размещение нового заказа.
-    - **Пример**:
-      ```bash
-      curl -X POST http://localhost:44044/order -H "Content-Type: application/json" -d '{
-        "customer_name": "John Doe",
-        "pizza_type": "Margherita",
-        "size": "LARGE",
-        "toppings": ["Cheese", "Olives"]
-      }'
-      ```
+- **Host:** `localhost`
+- **Port:** `44044`
+- **Protocol:** gRPC
 
-- **/order/status**
-    - **GET**: Проверка статуса заказа по его ID.
-    - **Пример**:
-      ```bash
-      curl -X GET "http://localhost:44044/order/status?order_id=1"
-      ```
+## Service: `POrder`
 
-- **/order/cancel**
-    - **POST**: Отмена заказа по его ID.
-    - **Пример**:
-      ```bash
-      curl -X POST http://localhost:44044/order/cancel -H "Content-Type: application/json" -d '{
-        "order_id": "1"
-      }'
-      ```
+### Method: `PlaceOrder`
 
-# Функционал
+Places a new order for a pizza.
 
-- Проект реализован с использованием gRPC, что обеспечивает высокую производительность.
-- Проект запускается на локальной машине, и все настройки могут быть заданы через файл `.env`.
-- Поддерживается кеширование данных с использованием Redis, что ускоряет доступ к часто используемой информации.
-- Логирование и мониторинг работы сервиса через удобные команды в Makefile.
+**Request:**
 
-# Дополнительно
+- **Customer Name:** `string`
+- **Pizza Type:** `string` (e.g., "Margherita", "Pepperoni")
+- **Size:** `PizzaSize` (enum: `SMALL`, `MEDIUM`, `LARGE`)
+- **Toppings:** `repeated string` (Optional - extra toppings)
 
-- **Static Configuration**: Статическая конфигурация через `.env` файл.
-- **Caching**: Кеширование данных с использованием Redis, что делает проект более быстрым и отзывчивым.
-- **Advanced Endpoints**: Дополнительные эндпоинты и методы, такие как обновление и удаление заказов.
+**Example Command:**
 
-Проект PET_Order_Pizza_App создан с целью демонстрации возможностей gRPC и практик разработки масштабируемых приложений. Он включает в себя все необходимое для быстрого развертывания и тестирования в реальных условиях.
+```bash
+grpcurl -plaintext -d '{
+  "customer_name": "Dmitriy",
+  "pizza_type": "Margherita",
+  "size": "MEDIUM",
+  "toppings": ["extra cheese", "olives"]
+}' localhost:44044 pizza_order.POrder/PlaceOrder
+```
+**Response:**
+
+- **Order ID:** `string` - Unique identifier for the order.
+- **Message:** `string` - Confirmation message.
+
+### Method: `CheckOrderStatus`
+
+Checks the status of an existing order.
+
+**Request:**
+
+- **Order ID:** `string`
+
+**Example Command:**
+
+```bash
+grpcurl -plaintext -d '{
+  "order_id": "12345"
+}' localhost:44044 pizza_order.POrder/CheckOrderStatus
+```
+
+**Response:**
+
+- **Order ID:** `string` 
+- **Status:**  OrderStatus (enum: PREPARING, ON_THE_WAY, DELIVERED, CANCELLED)
+
+### Method: `CancelOrder`
+
+Cancels an existing order.
+
+**Request:**
+
+- **Order ID:** `string`
+
+**Example Command:**
+
+```bash
+grpcurl -plaintext -d '{
+  "order_id": "12345"
+}' localhost:44044 pizza_order.POrder/CancelOrder
+```
+**Response:**
+
+- **Order ID:** `string` 
+- **Message:** `string` - Confirmation message.
+
+## Prerequisites
+- Ensure that the gRPC server is running on `localhost:44044`
+- Install `grpcurl` if it is not already installed:
+
+```bash
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+```
