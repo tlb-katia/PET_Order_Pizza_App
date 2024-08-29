@@ -33,7 +33,7 @@ func MustLoad() *Config {
 func fetchPath() string {
 	var res string
 
-	flag.StringVar(&res, "config", "", "path to config file")
+	flag.StringVar(&res, "config", "/home/katia/GolandProjects/PizzaOrderApp(gRPC)/cmd/pizza-order/config/config.yaml", "path to config file")
 	flag.Parse()
 
 	if res == "" {

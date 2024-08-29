@@ -2,8 +2,8 @@ package order
 
 import (
 	"context"
-	"fmt"
 	"github.com/tlb-katia/PET_Order_Pizza_App/internal/entities"
+	"github.com/tlb-katia/PET_Order_Pizza_App/internal/storage"
 	pizza_orderv1 "github.com/tlb-katia/protos/protos/gen/go/pizza-order"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,13 +34,13 @@ func (s *serverAPI) PlaceOrder(ctx context.Context, req *pizza_orderv1.OrderRequ
 	reqEntity := &entities.PizzaOrderReq{
 		CustomerName: req.CustomerName,
 		PizzaType:    req.PizzaType,
-		PizzaSize:    entities.PizzaSize(req.Size),
+		PizzaSize:    req.Size,
 		Toppings:     req.Toppings,
 	}
 
 	order, err := s.order.PlaceOrder(ctx, reqEntity)
 	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &pizza_orderv1.OrderResponse{
@@ -56,7 +56,7 @@ func (s *serverAPI) CheckOrderStatus(ctx context.Context, req *pizza_orderv1.Ord
 
 	orderStatus, err := s.order.CheckOrderStatus(ctx, &entities.OrderStatusRequest{OrderId: req.OrderId})
 	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &pizza_orderv1.OrderStatusResponse{
@@ -71,7 +71,7 @@ func (s *serverAPI) CancelOrder(ctx context.Context, req *pizza_orderv1.CancelOr
 	}
 	order, err := s.order.CancelOrder(ctx, &entities.CancelOrderRequest{OrderId: req.OrderId})
 	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	return &pizza_orderv1.CancelOrderResponse{
@@ -82,16 +82,16 @@ func (s *serverAPI) CancelOrder(ctx context.Context, req *pizza_orderv1.CancelOr
 
 func validatePizzaParams(req *pizza_orderv1.OrderRequest) error {
 	if req.CustomerName == "" {
-		return fmt.Errorf("customer name is required")
+		return storage.ErrEmptyCustomerName
 	}
 	if req.PizzaType == "" {
-		return fmt.Errorf("pizza type is required")
+		return storage.ErrEmptyPizzaType
 	}
-	if req.Size == 0 {
-		return fmt.Errorf("pizza size is required")
+	if req.Size >= 3 || req.Size < 0 {
+		return storage.ErrSizeOutOfRange
 	}
 	if req.Toppings == nil {
-		return fmt.Errorf("toppings are required")
+		return storage.ErrEmptyToppings
 	}
 	return nil
 }

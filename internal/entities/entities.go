@@ -1,26 +1,11 @@
 package entities
 
-type PizzaSize int32
-
-const (
-	SMALL PizzaSize = iota
-	MEDIUM
-	LARGE
-)
-
-type OrderStatus int32
-
-const (
-	PREPARING OrderStatus = iota
-	ON_THE_WAY
-	DELIVERED
-	CANCELLED
-)
+import pizza_orderv1 "github.com/tlb-katia/protos/protos/gen/go/pizza-order"
 
 type PizzaOrderReq struct {
 	CustomerName string
 	PizzaType    string
-	PizzaSize    PizzaSize
+	PizzaSize    pizza_orderv1.PizzaSize
 	Toppings     []string
 }
 
@@ -35,7 +20,7 @@ type OrderStatusRequest struct {
 
 type OrderStatusResp struct {
 	OrderId     string
-	OrderStatus OrderStatus
+	OrderStatus pizza_orderv1.OrderStatus
 }
 
 type CancelOrderRequest struct {
@@ -51,7 +36,7 @@ type PizzaDbParams struct {
 	OrderId      string
 	CustomerName string
 	PizzaType    string
-	PizzaSize    PizzaSize
+	PizzaSize    pizza_orderv1.PizzaSize
 	Toppings     []string
-	OrderStatus  OrderStatus
+	OrderStatus  pizza_orderv1.OrderStatus
 }

@@ -3,8 +3,11 @@ package tests
 import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
+	"github.com/tlb-katia/PET_Order_Pizza_App/internal/storage"
 	"github.com/tlb-katia/PET_Order_Pizza_App/tests/suite"
 	pizza_orderv1 "github.com/tlb-katia/protos/protos/gen/go/pizza-order"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"testing"
 )
 
@@ -80,30 +83,43 @@ func TestNewOrder_FailCases(t *testing.T) {
 		pizzaType    pizzaType
 		pizzaSize    pizza_orderv1.PizzaSize
 		toppings     pizzaToppings
+		expectedCode codes.Code
 		expectedErr  string
 	}{
 		{
-			testName:     "New Order With Empty Customer Name and Pizza type",
+			testName:     "New Order With Empty Customer Name",
 			customerName: "",
+			pizzaType:    "Neopolitana",
+			pizzaSize:    pizza_orderv1.PizzaSize_LARGE,
+			toppings:     pizzaToppings{"Extra Cheese"},
+			expectedCode: codes.InvalidArgument,
+			expectedErr:  storage.ErrEmptyCustomerName.Error(),
+		},
+		{
+			testName:     "New Order With Empty Pizza type",
+			customerName: "Drakaris",
 			pizzaType:    "",
 			pizzaSize:    pizza_orderv1.PizzaSize_LARGE,
 			toppings:     pizzaToppings{"Extra Cheese"},
-			expectedErr:  "",
+			expectedCode: codes.InvalidArgument,
+			expectedErr:  storage.ErrEmptyPizzaType.Error(),
 		},
 		{
 			testName:     "New Order With Empty toppings",
 			customerName: "Katia",
 			pizzaType:    "Neopolitana",
 			pizzaSize:    pizza_orderv1.PizzaSize_SMALL,
-			expectedErr:  "",
+			expectedCode: codes.InvalidArgument,
+			expectedErr:  storage.ErrEmptyToppings.Error(),
 		},
 		{
 			testName:     "New Order With pizza size out of range",
 			customerName: "Katia",
 			pizzaType:    "Neopolitana",
-			pizzaSize:    pizza_orderv1.PizzaSize_SMALL,
+			pizzaSize:    10,
 			toppings:     pizzaToppings{"Extra Cheese"},
-			expectedErr:  "",
+			expectedCode: codes.InvalidArgument,
+			expectedErr:  storage.ErrSizeOutOfRange.Error(),
 		},
 	}
 
@@ -116,7 +132,11 @@ func TestNewOrder_FailCases(t *testing.T) {
 				Toppings:     tt.toppings,
 			})
 			require.Error(t, err)
-			require.Contains(t, err.Error(), tt.expectedErr)
+
+			stErr, ok := status.FromError(err)
+			require.True(t, ok, "Expected a gRPC status error")
+			require.Equal(t, tt.expectedCode, stErr.Code())
+			require.Contains(t, stErr.Message(), tt.expectedErr)
 		})
 	}
 }
